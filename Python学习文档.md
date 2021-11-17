@@ -271,3 +271,122 @@ def f1(a, b, c = 0, *args, **kw)
 
 在函数调用的时候，Python解释器自动按照参数位置和参数名把对应的参数传进去。
 
+## 2021-11-17
+
+解决递归调用栈溢出的方法使用过尾递归优化。*（如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且它的返回值不属于表达式的一部分时，这个递归调用就是尾递归）* 简单一句话：在尾部调用自己！
+
+汉诺塔形式
+
+```python
+def move(n, a, b, c):
+    if n == 1:
+        print(a, '-->', c)
+    else:
+        move(n - 1, a, c, b)
+        move(1, a, b, c)
+        move(n - 1, b, a, c)
+```
+
+### 切片
+
+L[0: 3] 表示从索引 0 开始取，一直到索引到 3 为止，不包括三。第一个索引为 0 可以忽视。L[-1] 选择倒数第一个元素。选择后几个数字
+
+```
+L[-10:]  #选择后10个数字
+L[start location: ending location: step]
+```
+
+tuple 也是一种list，唯一区别就是tuple不可变。
+
+### 迭代
+
+dict 迭代格式
+
+```
+for key in d: # 迭代 key
+for value in d.values()  #迭代 value
+for k, v in d.items()   #迭代 item
+```
+
+判断一个对象是否可以迭代
+
+```
+from collections.abc import Iterable
+isinstance(对象, Iterable)  # 
+```
+
+### 列表生成式
+
+List Comprehensions，内置生成 list 的生成式
+
+```
+[x * x for x in range(1, 11)]
+[x * x for x in range(1, 11) if x % 2 == 0]  #增加判断语句
+[m +n for m in 'ABC' for n in 'XYZ']  #使用两层循环，形成全排列
+[k + '=' + v for k, v in d.items()]   #调用多个变量！
+[x if x % 2 == 0 else -x for x in range(1, 11)]
+```
+
+在[ for ] for 之前为对于遍历以后的 x 进行处理的。for 之后的为对于遍历中需要满足条件。在一个列表生成式中，`for`前面的`if ... else`是表达式，而`for`后面的`if`是过滤条件，不能带`else`。
+
+### 生成器
+
+要创建一个generator，有很多种方法。第一种方法很简单，只要把一个列表生成式的`[]`改成`()`，就创建了一个generator。创建`L`和`g`的区别仅在于最外层的`[]`和`()`，`L`是一个list，而`g`是一个generator。
+
+每一次调用 next(g), 就计算出`g`的下一个元素的值，直到没有元素，抛出StopIteration错误。但基本这个方法不适用
+
+**这就是定义generator的另一种方法。如果一个函数定义中包含`yield`关键字，那么这个函数就不再是一个普通函数，而是一个generator函数，调用一个generator函数将返回一个generator**
+
+```
+def fib(max):
+    n, a, b = 0, 0, 1
+    while n < max:
+        yield b
+        a, b = b, a + b
+        n = n + 1
+    return 'done'
+```
+
+而变成generator的函数，在每次调用`next()`的时候执行，遇到`yield`语句返回，再次执行时从上次返回的`yield`语句处继续执行。
+
+但是用`for`循环调用generator时，发现拿不到generator的`return`语句的返回值。如果想要拿到返回值，必须捕获`StopIteration`错误，返回值包含在`StopIteration`的`value`中。
+
+```python
+while True:
+	try:
+		x = next(g)
+		print('g', x)
+	except StopIteration as e:
+		print('Gnerator return value:', e.value)
+		break
+```
+
+### 迭代器
+
+可以直接作用于`for`循环的数据类型有以下几种：
+
+一类是集合数据类型，如`list`、`tuple`、`dict`、`set`、`str`等；
+
+一类是`generator`，包括生成器和带`yield`的generator function。
+
+这些可以直接作用于`for`循环的对象统称为可迭代对象：`Iterable`。
+
+可以使用`isinstance()`判断一个对象是否是`Iterable`对象：
+
+
+
+而生成器不但可以作用于`for`循环，还可以被`next()`函数不断调用并返回下一个值，直到最后抛出`StopIteration`错误表示无法继续返回下一个值了。
+
+可以被`next()`函数调用并不断返回下一个值的对象称为迭代器：`Iterator`。
+
+可以使用`isinstance()`判断一个对象是否是`Iterator`对象：
+
+生成器都是`Iterator 对象`，但`list, dict, str` 虽然都是`Iterable`，但是却不是`Iterator`
+
+把`list`、`dict`、`str`等`Iterable`变成`Iterator`可以使用`iter()`函数：
+
+```
+isinstance(iter(物体), Iterator)
+```
+
+这是因为Python的`Iterator`对象表示的是一个数据流，Iterator对象可以被`next()`函数调用并不断返回下一个数据，直到没有数据时抛出`StopIteration`错误。可以把这个数据流看做是一个有序序列，但我们却不能提前知道序列的长度，只能不断通过`next()`函数实现按需计算下一个数据，所以`Iterator`的计算是惰性的，只有在需要返回下一个数据时它才会计算。
