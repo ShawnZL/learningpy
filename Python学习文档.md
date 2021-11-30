@@ -121,7 +121,7 @@ d['Michael'] # 95
 d.pop('m')
 ```
 
-set -> 其他语言set key不重复 而且按照顺序输出
+set -> 其他语言set key不重复而且按照顺序输出
 
 要创建一个set，需要提供一个list作为输入集合
 
@@ -201,7 +201,7 @@ a, b = map(int, input('输入a,b:').split()) #此时a,b为int类型
 ### 默认参数
 
 ```
-def power(x, n=2):
+def power(x, n = 2):
     s = 1
     while n > 0:
         n = n - 1
@@ -239,7 +239,7 @@ def calc(*number):
     return sum
 ```
 
-`*nums`表示把`nums`这个list的所有元素作为可变参数传进去。这种写法相当有用，而且很常见。
+`*number`表示把`number`这个list的所有元素作为可变参数传进去。这种写法相当有用，而且很常见。
 
 ### 关键字参数
 
@@ -322,7 +322,7 @@ List Comprehensions，内置生成 list 的生成式
 ```
 [x * x for x in range(1, 11)]
 [x * x for x in range(1, 11) if x % 2 == 0]  #增加判断语句
-[m +n for m in 'ABC' for n in 'XYZ']  #使用两层循环，形成全排列
+[m + n for m in 'ABC' for n in 'XYZ']  #使用两层循环，形成全排列
 [k + '=' + v for k, v in d.items()]   #调用多个变量！
 [x if x % 2 == 0 else -x for x in range(1, 11)]
 ```
@@ -337,7 +337,7 @@ List Comprehensions，内置生成 list 的生成式
 
 **这就是定义generator的另一种方法。如果一个函数定义中包含`yield`关键字，那么这个函数就不再是一个普通函数，而是一个generator函数，调用一个generator函数将返回一个generator**
 
-```
+```python
 def fib(max):
     n, a, b = 0, 0, 1
     while n < max:
@@ -390,3 +390,60 @@ isinstance(iter(物体), Iterator)
 ```
 
 这是因为Python的`Iterator`对象表示的是一个数据流，Iterator对象可以被`next()`函数调用并不断返回下一个数据，直到没有数据时抛出`StopIteration`错误。可以把这个数据流看做是一个有序序列，但我们却不能提前知道序列的长度，只能不断通过`next()`函数实现按需计算下一个数据，所以`Iterator`的计算是惰性的，只有在需要返回下一个数据时它才会计算。
+
+## 函数式编程
+
+特点。允许把函数本身作为参数传入另一个函数，还允许返回一个函数！
+
+函数本身也可以赋值给变量，即变量可以指向函数。
+
+既然变量可以指向函数，函数的参数能接收变量，那么一个函数就可以接收另一个函数作为参数，这种函数就可以称为高阶函数
+
+**调用另一个文件中另一个函数，A.py 中的 add 函数, from A import add**
+
+#### map/reduce
+
+我们先看map。`map()`函数接收两个参数，一个是函数，一个是`Iterable`，`map`将传入的函数依次作用到序列的每个元素，并把结果作为新的`Iterator`返回。
+
+```python
+>>> def f(x):
+...     return x * x
+...
+>>> r = map(f, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+>>> list(r)
+[1, 4, 9, 16, 25, 36, 49, 64, 81]
+```
+
+map() 传入的第一个参数是 f，即函数对象本身。由于结果 r 是一个Iterator，Iterator是惰性序列，因此可以通过 list() 函数将整个序列都计算出来。
+
+```pyhon
+>>> list(map(str, [1, 2, 3, 4, 5, 6, 7, 8, 9]))
+```
+
+reduce 用法`reduce`把一个函数作用在一个序列`[x1, x2, x3, ...]`上，这个函数必须接收两个参数，`reduce`把结果继续和序列的下一个元素做累积计算，其效果就是：
+
+```python
+reduce(f, [x1, x2, x3, x4]) = f(f(f(x1, x2), x3), x4)
+```
+
+##### 字符串大小写转换
+
+```python
+str = "www.runoob.com"
+str.upper() 		#将所有字符中的小写字母转换为大写字母
+str.lower() 		#将所有字符中的大写字母转换为小写字母
+str.capitalize() 	#把第一个字母转化为大写字母，其余小写
+str.title()			#把每个单词的第一个字母转化为大写，其余小写
+```
+
+```
+def str2float(s) -> float:
+    s = s.split('.')
+    if s[0]==0:
+        return 0 + reduce(lambda x, y: x / 10 + y, map(lambda x:DIGITS[x], s[1][::-1]))/10
+    #[::-1]表示为反转
+    else:
+        return reduce(lambda x, y: x * 10 + y, map(lambda x:DIGITS[x], s[0])) + reduce(lambda x, y: x / 10 + y, map(lambda x:DIGITS[x], s[1][::-1]))/10
+
+```
+
